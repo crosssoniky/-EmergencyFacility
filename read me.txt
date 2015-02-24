@@ -1,0 +1,7 @@
+各都市が公開している避難所データを元に避難を支援するWebアプリ
+データはjig.jpのOpenDataPlatform(odp)を利用しています
+
+icon,cssその他bootstrapに頼っています
+
+odp:http://developer.odp.jig.jp/
+bootstrap:http://getbootstrap.com/
