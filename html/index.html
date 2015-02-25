@@ -1,17 +1,16 @@
-﻿
-<meta charset="utf-8">
+﻿<meta charset="utf-8">
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script src="http://www.logical-arts.jp/wp-content/uploads/distance_and_azimuth.js" charset="shift_jis"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
 <script src="../bootstrap/js/bootstrap.min.js" charset="utf-8"></script>
 <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?&sensor=true"></script>
+<script src="../js/scripts.js"></script>
 <html lang="ja">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <title>SPARQL避難所</title>
-
     <!-- Bootstrap -->
     <link href="../bootstrap/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -25,6 +24,8 @@
             <option value="http://odp.jig.jp/rdf/jp/hyogo/kobe/222">兵庫県神戸市</option>
             <option value="http://odp.jig.jp/rdf/jp/tokyo/shinagawa/212">東京都品川区</option>
             <option value="http://odp.jig.jp/rdf/jp/chiba/nagareyama/165">千葉県流山市</option>
+            <option value="http://odp.jig.jp/rdf/jp/shizuoka/shimada/236">静岡県島田市</option>
+            <!--<option value="http://odp.jig.jp/rdf/jp/nara/nara/233">奈良県奈良市</option>-->
             <!--<option value="http://odp.jig.jp/rdf/jp/aichi/nagakute/235">愛知県長久手市</option>-->
         </select>
         <p id="Crd" style="display:none"></p>
@@ -35,7 +36,6 @@
         <button class="btn btn-primary btn-xs" id="androidReload" onclick="init()" style="display:none">
             <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span> 更新
         </button>
-
         <div id="res" style="display:none"></div>
         <br />
         <div class="row" style="display:none" id="opt">
