@@ -126,15 +126,11 @@ function SuccessPos(position) {
         navigator.userAgent.indexOf('iPad') == -1) ||
         navigator.userAgent.indexOf('iPod') > 0) {
         document.getElementById("modalButton").style.display = "inline";
-    } else if (navigator.userAgent.indexOf('Android') > 0) {
+    } else {
         document.getElementById("androidReload").style.display = "inline";
         document.getElementById("res").style.display = "inline";
         setTimeout('InitializeMap()', 100);
-    } else {
-        document.getElementById("res").style.display = "inline";
-        setTimeout('InitializeMap()', 100);
     }
-}
 function ErrorPos(error) {
     alert("GPS is not Working! ErrorCode:" + error.code);
 }
@@ -197,11 +193,7 @@ window.addEventListener('load', function () {
         navigator.userAgent.indexOf('iPad') == -1) ||
         navigator.userAgent.indexOf('iPod') > 0) {
         window.addEventListener('deviceorientation', iOS, false);
-    } else if (navigator.userAgent.indexOf('Android') > 0) {
-        android();
     } else {
-        document.getElementById("res").innerHTML = "<br/><h3>このデバイスは対応しておりません。</h3>";
-        document.getElementById("res").style.display = "block";
-        document.getElementById("city").style.display = "none";
+        android();
     }
 }, false);
