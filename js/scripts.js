@@ -39,7 +39,7 @@ function init() {
 //d3.jsonにURLとクエリのように投げればJSONで帰るみたい
 function SPARQL(MyCrd) {
     var cityName = document.getElementById("city").options[document.getElementById("city").selectedIndex].value;
-    const query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>       \
+    var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>       \
             PREFIX jrrk: <http://purl.org/jrrk#>                                    \
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>               \
             PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>                  \
@@ -53,8 +53,14 @@ function SPARQL(MyCrd) {
             jrrk:address ?address ;                                                 \
             geo:lat ?lat;                                                           \
             geo:long ?long;                                                         \
-            schema:telephone ?telephone;                                            \
-            }}";
+            ";
+    if (document.getElementById("city").selectedIndex < 7) {
+        query += "schema:telephone ?telephone;}}";
+        document.getElementById("telephoneButton").disabled = false;
+    } else {
+        query += "}}";
+        document.getElementById("telephoneButton").disabled = true;
+    }
     var url = "http://sparql.odp.jig.jp/api/v1/sparql?query=" + encodeURIComponent(query) + "&output=json";
     d3.json(url, function (error, data) {
         var jsons = data["results"]["bindings"];
@@ -118,7 +124,7 @@ function calculate(MyCrd) {
 //Geolocationの成功失敗関数
 function SuccessPos(position) {
     myCrd = position.coords.latitude.toString() + "," + position.coords.longitude.toString();
-    
+
     if (document.getElementById("city").options[document.getElementById("city").selectedIndex].value == "NearPoint") {
         SpotListCrd[0] = "35.956562,136.184489";
         SpotListCrd[1] = "34.439619,134.914843";
@@ -126,6 +132,8 @@ function SuccessPos(position) {
         SpotListCrd[3] = "35.609162,139.73016";
         SpotListCrd[4] = "35.85624,139.902903";
         SpotListCrd[5] = "34.836561,138.176151";
+        SpotListCrd[6] = "34.685046,135.805037";
+        SpotListCrd[7] = "35.184016,137.048729";
         var NearIndex = calculate(myCrd);
         document.getElementById("city").selectedIndex = NearIndex + 1;
         SpotListCrd.length = 0;
@@ -142,9 +150,11 @@ function SuccessPos(position) {
         document.getElementById("res").style.display = "inline";
         setTimeout('InitializeMap()', 100);
     }
+}
 function ErrorPos(error) {
     alert("GPS is not Working! ErrorCode:" + error.code);
 }
+
 
 //地図表示
 function InitializeMap() {
