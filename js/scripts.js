@@ -118,9 +118,20 @@ function calculate(MyCrd) {
 //Geolocation‚Ì¬Œ÷Ž¸”sŠÖ”
 function SuccessPos(position) {
     myCrd = position.coords.latitude.toString() + "," + position.coords.longitude.toString();
+    
+    if (document.getElementById("city").options[document.getElementById("city").selectedIndex].value == "NearPoint") {
+        SpotListCrd[0] = "35.956562,136.184489";
+        SpotListCrd[1] = "34.439619,134.914843";
+        SpotListCrd[2] = "34.690127,135.195497";
+        SpotListCrd[3] = "35.609162,139.73016";
+        SpotListCrd[4] = "35.85624,139.902903";
+        SpotListCrd[5] = "34.836561,138.176151";
+        var NearIndex = calculate(myCrd);
+        document.getElementById("city").selectedIndex = NearIndex + 1;
+        SpotListCrd.length = 0;
+    }
 
     SPARQL(myCrd);
-
 
     if ((navigator.userAgent.indexOf('iPhone') > 0 &&
         navigator.userAgent.indexOf('iPad') == -1) ||
