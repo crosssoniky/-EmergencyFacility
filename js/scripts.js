@@ -1,220 +1,243 @@
-var SpotListCrd = [];
-var SpotListName = [];
-var SpotListAngle = [];
-var myCrd;
-var toCrd;
-var Tel;
-var dist = Infinity;
-var heading = 0;
-var defAngle = 0;
+Ôªøvar nowpos,topos,map,directionsDisplay,directionsService;
 
-//SelectBoxÇ≈ÇÃìÆçÏÇ≈ÇÃï™äÚì_
-function init() {
-    myCrd = "NoData";
-    defAngle = 0;
-    SpotListAngle.length = 0;
-    SpotListName.length = 0;
-    SpotListCrd.length = 0;
+const odp="PREFIX odp:<http://odp.jig.jp/odp/1.0#>";
+const dcterms="PREFIX dcterms:<http://purl.org/dc/terms/>";
+const rdfs="PREFIX rdfs:<http://www.w3.org/2000/01/rdf-schema#>";
+const geo="PREFIX geo:<http://www.w3.org/2003/01/geo/wgs84_pos#>";
+const rdf="PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>";
+const jrrk="PREFIX jrrk:<http://purl.org/jrrk#>";
+const baseQuery=[rdfs+geo+rdf+jrrk+"select distinct *{?s rdf:type jrrk:",";rdfs:label ?label;geo:lat ?lat;geo:long ?long;jrrk:address ?address;FILTER(regex(str(?s), "," ))}"];
+const baseURL="https://sparql.odp.jig.jp/api/v1/sparql?output=json&query=";
+const citiesQuery=odp+dcterms+rdfs+geo+rdf+'select distinct ?lat ?long ?labelen ?labeljp{?uri rdf:type odp:Dataset;dcterms:publisher ?name1.?name1 rdfs:label ?name.optional{?uri dcterms:modified ?d}?s rdf:type odp:OpenDataCity;rdfs:label ?labelen;rdfs:label ?labeljp;geo:lat ?lat;geo:long ?long;FILTER (regex(?name,"ÈÉΩ")||regex(?name,"ÈÅì")||regex(?name,"Â∫ú")||regex(?name,"Áúå"))FILTER regex(?labeljp,"^"+?name+"$")BIND (lang(?labelen) AS ?language)FILTER regex(str(?language),"en")BIND(lang(?labeljp) AS ?language2)FILTER regex(str(?language2),"ja")}ORDER BY ?labeljp';
 
-    if (navigator.geolocation && document.getElementById("city").options[document.getElementById("city").selectedIndex].value != "JON") {
-        navigator.geolocation.getCurrentPosition(SuccessPos, function (error) {
-            myCrd = "0,0";
-            alert("GPS is not Working! ErrorCode:" + error.code);
+
+//SelectBox„Åß„ÅÆÂãï‰Ωú„Åß„ÅÆÂàÜÂ≤êÁÇπ
+onload=function () {
+    $('#canvas')[0].style.width=window.innerWidth*0.8;
+    $('#canvas')[0].style.height=window.innerHeight*0.5;
+    directionsDisplay=new google.maps.DirectionsRenderer();
+    directionsService=new google.maps.DirectionsService();
+
+
+    var NowCity='„Å™„Çì„Åß„ÇÇ„Å™„ÅÑÁúå„Å©„Åì„ÅãÂ∏Ç';
+    if (window.navigator.geolocation) {
+        window.navigator.geolocation.getCurrentPosition(
+            function (position) {
+                latlng=new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
+                nowpos=latlng;
+                mapDrawing();
+                var geocoder=new google.maps.Geocoder();
+                geocoder.geocode({
+                    latLng: latlng
+                },function (results,status) {
+                    if (status==google.maps.GeocoderStatus.OK) {
+                        if (results[0].geometry) {
+                            var address=results[0].formatted_address.split(' ');
+                            NowCity=address[2];
+                        }
+                    }
+                    CitySet(NowCity,true);
+                    setInterval("nowposUpdate()",10000);
+                });
+            },
+            function (error) {
+                alert("‰ΩçÁΩÆÊÉÖÂ†±ÂèñÂæó„Ç®„É©„Éº:"+error.message);
+                CitySet(NowCity,false);
+                nowpos=new google.maps.LatLng(35,135);
+                mapDrawing();
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 2000,
+                maximumAge: 60000
+            }
+        );
+    }
+}
+function CitySet(NowCityNoYATSU,flag) {
+    var NowCities=NowCityNoYATSU.split('Áúå');
+    var NowCity="HelloWorld!";
+    try {
+        NowCity=NowCities[1].split(/Â∏Ç|Áî∫|Êùë/)[0];
+    } catch (e) { }
+    var url=baseURL+encodeURIComponent(citiesQuery);
+    d3.json(url,function (error,data) {
+        var jsons=data["results"]["bindings"];
+        if (jsons.length==0) {
+            alert('„Éá„Éº„Çø„Éô„Éº„ÇπÂÜÖ„Å´Ë¶ã„Å§„Åã„Çä„Åæ„Åõ„Çì„Åß„Åó„Åü„ÄÇ');
+            return false;
+        }
+        var selected=false;
+        for (var i=0;i<jsons.length;i++) {
+            var Administration='Êó•Êú¨';
+            switch (jsons[i].labeljp.value.split(/ÈÅì|ÈÉΩ|Â∫ú|Áúå/)[0]) {
+                case 'ÂåóÊµ∑': Administration='Hokkaido'; break;
+                case 'ÈùíÊ£Æ':
+                case 'ÁßãÁî∞':
+                case 'Â≤©Áî∞':
+                case 'ÂÆÆÂüé':
+                case 'Â±±ÂΩ¢':
+                case 'Á¶èÂ≥∂': Administration='Tohoku'; break;
+                case 'Ëå®Âüé':
+                case 'Ê†ÉÊú®':
+                case 'Áæ§È¶¨':
+                case 'ÂüºÁéâ':
+                case 'ÂçÉËëâ':
+                case 'Êù±‰∫¨':
+                case 'Á•ûÂ•àÂ∑ù': Administration='Kanto'; break;
+                case 'Â±±Ê¢®':
+                case 'Èï∑Èáé':
+                case 'Êñ∞ÊΩü':
+                case 'ÂØåÂ±±':
+                case 'Áü≥Â∑ù':
+                case 'Á¶è‰∫ï':
+                case 'ÈùôÂ≤°':
+                case 'ÊÑõÁü•':
+                case 'Â≤êÈòú': Administration='Chubu'; break;
+                case '‰∏âÈáç':
+                case 'ÊªãË≥Ä':
+                case '‰∫¨ÈÉΩ':
+                case 'Â§ßÈò™':
+                case 'ÂÖµÂ∫´':
+                case 'Â•àËâØ':
+                case 'ÂíåÊ≠åÂ±±': Administration='Kinki'; break;
+                case 'È≥•Âèñ':
+                case 'Â≥∂Ê†π':
+                case 'Â≤°Â±±':
+                case 'Â∫ÉÂ≥∂':
+                case 'Â±±Âè£': Administration='Chugoku'; break;
+                case 'È¶ôÂ∑ù':
+                case 'ÊÑõÂ™õ':
+                case 'Âæ≥Â≥∂':
+                case 'È´òÁü•': Administration='Shikoku'; break;
+                case 'Á¶èÂ≤°':
+                case '‰ΩêË≥Ä':
+                case 'Èï∑Â¥é':
+                case 'ÁÜäÊú¨':
+                case 'Â§ßÂàÜ':
+                case 'ÂÆÆÂ¥é':
+                case 'ÈπøÂÖêÂ≥∂':
+                case 'Ê≤ñÁ∏Ñ': Administration='Kyusyu'; break;
+            }
+
+            $('#'+Administration).append($('<option id="select'+i+'">').html(jsons[i].labeljp.value/*+','+jsons[i].labelen.value.split('-')[0]).val(jsons[i].labelen.value.split('-')[0].toLowerCase()*/));
+            document.getElementById('select'+i).setAttribute('data-latitude',jsons[i].lat.value);
+            document.getElementById('select'+i).setAttribute('data-longitude',jsons[i].long.value);
+            document.getElementById('select'+i).setAttribute('data-labelen',jsons[i].labelen.value.split('-')[0].toLowerCase());
+            if (NowCities.length>1) {
+                if (jsons[i].labeljp.value.match(NowCity)!=null) {
+                    document.getElementById('select'+i).selected=true;
+                    selected=true;
+                }
+            }
+        }
+        if (!selected) {
+            for (var i=0;i<jsons.length;i++) {
+                if (jsons[i].labeljp.value.length<5&&jsons[i].labeljp.value.match(NowCities[0])!=null) {
+                    document.getElementById('select'+i).selected=true;
+                    selected=true;
+                }
+            }
+        }
+        if (flag)
+            DataResourceChange($('#citySelection'));
+        return true;
+    });
+}
+
+function DataResourceChange(select) {
+    var selectedItem=select.options.item(select.selectedIndex);
+    checkShelter(selectedItem.getAttribute('data-labelen'));
+}
+
+function mapDrawing() {
+    var opts={
+        zoom: 10,
+        center: nowpos,
+        mapTypeId: google.maps.MapTypeId.TERRAIN
+    };
+    map=new google.maps.Map($('#canvas')[0],opts);
+}
+
+function nowposUpdate() {
+    if (window.navigator.geolocation) {
+        window.navigator.geolocation.getCurrentPosition(
+            function (position) {
+                nowpos=new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
+            },
+            {
+                enableHighAccuracy: true,
+                maximumAge: 60000
+            }
+        );
+    }
+}
+
+function checkShelter(cityName) {
+    var query=baseQuery[0]+"EmergencyFacility"+baseQuery[1]+'"'+cityName+'"'+baseQuery[2];
+    var url=baseURL+encodeURIComponent(query);
+    d3.json(url,function (error,data) {
+        var jsons=data["results"]["bindings"];
+        if (jsons.length==0) {
+            alert('„Éá„Éº„Çø„Éô„Éº„ÇπÂÜÖ„Å´Ë¶ã„Å§„Åã„Çä„Åæ„Åõ„Çì„Åß„Åó„Åü„ÄÇ');
+            document.getElementById("Arrow").style.display="none";
+            return;
+        }
+        jsons=TargetSortByDistance(jsons);
+        topos=new google.maps.LatLng(jsons[0].lat.value,jsons[0].long.value);
+
+        var request={
+            origin: nowpos,
+            destination: topos,
+            avoidHighways: true,
+            avoidTolls: true,
+            travelMode: google.maps.DirectionsTravelMode.WALKING
+        }
+        directionsService.route(request,function (result,status) {
+            if (status==google.maps.DirectionsStatus.OK) {
+                dis=result.routes[0].legs[0].distance.value;
+
+                directionsDisplay.setMap(null);
+                directionsDisplay.setDirections(null);
+                directionsDisplay.setDirections(result);
+                directionsDisplay.setMap(map);
+            } else {
+                console.log(status);
+                alert(status);
+            }
+        },function (err) {
+            alert(err);
         });
-    } else if (document.getElementById("city").options[document.getElementById("city").selectedIndex].value != "JON") {
-        alert("GPS can not Working!!");
-    } else {
-        document.getElementById("Name").style.display = "none";
-        document.getElementById("res").style.display = "none";
-        document.getElementById("opt").style.display = "none";
-        document.getElementById("modalButton").style.display = "none";
-        document.getElementById("androidReload").style.display = "none";
-        document.getElementById("Arrow").style.display = "none";
-        document.getElementById("Crd").style.display = "none";
-        document.getElementById("CC").style.display = "inline";
-    }
-}
-
-//äÃêSÇÃSPARQLÇ∆ÇÃí êM
-//d3.jsonÇ…URLÇ∆ÉNÉGÉäÇÃÇÊÇ§Ç…ìäÇ∞ÇÍÇŒJSONÇ≈ãAÇÈÇ›ÇΩÇ¢
-function SPARQL(MyCrd) {
-    var cityName = document.getElementById("city").options[document.getElementById("city").selectedIndex].value;
-    var query = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>       \
-            PREFIX jrrk: <http://purl.org/jrrk#>                                    \
-            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>               \
-            PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>                  \
-            PREFIX schema: <http://schema.org/>                                     \
-            PREFIX ic: <http://imi.ipa.go.jp/ns/core/rdf#>                          \
-                                                                                    \
-            select distinct ?label ?address ?lat ?long ?telephone{                  \
-            GRAPH<"+ cityName + ">{                                                 \
-            ?s  rdf:type <http://purl.org/jrrk#EmergencyFacility>;                  \
-            rdfs:label ?label;                                                      \
-            jrrk:address ?address ;                                                 \
-            geo:lat ?lat;                                                           \
-            geo:long ?long;                                                         \
-            ";
-    if (document.getElementById("city").selectedIndex < 7) {
-        query += "schema:telephone ?telephone;}}";
-        document.getElementById("telephoneButton").disabled = false;
-    } else {
-        query += "}}";
-        document.getElementById("telephoneButton").disabled = true;
-    }
-    var url = "http://sparql.odp.jig.jp/api/v1/sparql?query=" + encodeURIComponent(query) + "&output=json";
-    d3.json(url, function (error, data) {
-        var jsons = data["results"]["bindings"];
-        for (var i = 0; i < jsons.length; i++) {
-            SpotListCrd[SpotListCrd.length] = jsons[i].lat.value + "," + jsons[i].long.value;
-            SpotListName[SpotListName.length] = jsons[i].label.value;
-        }
-        if (jsons.length > 0) {
-            var MLB = calculate(MyCrd);
-            var pName = document.getElementById("Name");
-            pName.style.display = "block";
-            defAngle = SpotListAngle[MLB];
-            pName.innerText = "îìÔèÍèäÇÕÅu" + SpotListName[MLB] + "ÅvÇ≈Ç∑ÅB";
-            if (jsons[MLB].telephone != null)
-                Tel = jsons[MLB].telephone.value;
-            document.getElementById("opt").style.display = "block";
-            document.getElementById("Crd").style.display = "inline";
-            document.getElementById("Crd").innerText = "ãóó£ÇÕñÒ" + dist.toFixed(1) + "mÇ≈Ç∑ÅB";
-            document.getElementById("CC").style.display = "none";
-        }
+    }).on("error",function (error) {
+        topos=new google.maps.LatLng();
+        alert('„Éá„Éº„Çø„Éô„Éº„ÇπÂÜÖ„Å´Ë¶ã„Å§„Åã„Çä„Åæ„Åõ„Çì„Åß„Åó„Åü„ÄÇ');
+        document.getElementById("Arrow").style.display="none";
     });
 }
 
-//äpìxåvéZ
-function geoDirection(lat1, lng1, lat2, lng2) {
-    var Y = Math.cos(lng2 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180 - lat1 * Math.PI / 180);
-    var X = Math.cos(lng1 * Math.PI / 180) * Math.sin(lng2 * Math.PI / 180) - Math.sin(lng1 * Math.PI / 180) * Math.cos(lng2 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180 - lat1 * Math.PI / 180);
-    var dirE0 = 180 * Math.atan2(Y, X) / Math.PI; // ìåå¸Ç´Ç™0ìxÇÃï˚å¸
-    if (dirE0 < 0) {
-        dirE0 = dirE0 + 360; //0Å`360 Ç…Ç∑ÇÈÅB
-    }
-    var dirN0 = (dirE0 + 90) % 360; //(dirE0+90)ÅÄ360ÇÃó]ÇËÇèoóÕ ñkå¸Ç´Ç™0ìxÇÃï˚å¸
-    return dirN0;
-}
-
-//ãóó£åvéZ
-function calcdist(crd1, crd2) {
-    var LonLat1 = crd1.split(",");
-    var LonLat2 = crd2.split(",");
-    var distAngle = distance(LonLat1[0], LonLat1[1], LonLat2[0], LonLat2[1]);
-    SpotListAngle[SpotListAngle.length] = geoDirection(LonLat1[0], LonLat1[1], LonLat2[0], LonLat2[1]);
-    return distAngle;
-}
-
-//àÍî‘ãﬂÇ¢Ç∆Ç±ÇÎÇèüÇøî≤ÇØÇ≈íTÇ∑
-function calculate(MyCrd) {
-    var ret;
-    var dis;
-    dist = Infinity;
-    for (var i = 0; i < SpotListCrd.length; i++) {
-        dis = calcdist(MyCrd, SpotListCrd[i]);
-        if (dist > dis) {
-            dist = dis;
-            ret = i;
+function TargetSortByDistance(json) {
+    json.sort(function (a,b) {
+        var aPos=new google.maps.LatLng(a.lat.value,a.long.value);
+        var bPos=new google.maps.LatLng(b.lat.value,b.long.value);
+        var aDis=google.maps.geometry.spherical.computeDistanceBetween(nowpos,aPos);
+        var bDis=google.maps.geometry.spherical.computeDistanceBetween(nowpos,bPos);
+        if (aDis<bDis) {
+            return -1;
         }
-    }
-    toCrd = SpotListCrd[ret];
-    return ret;
-}
-
-//GeolocationÇÃê¨å˜é∏îsä÷êî
-function SuccessPos(position) {
-    myCrd = position.coords.latitude.toString() + "," + position.coords.longitude.toString();
-
-    if (document.getElementById("city").options[document.getElementById("city").selectedIndex].value == "NearPoint") {
-        SpotListCrd[0] = "35.956562,136.184489";
-        SpotListCrd[1] = "34.439619,134.914843";
-        SpotListCrd[2] = "34.690127,135.195497";
-        SpotListCrd[3] = "35.609162,139.73016";
-        SpotListCrd[4] = "35.85624,139.902903";
-        SpotListCrd[5] = "34.836561,138.176151";
-        SpotListCrd[6] = "34.685046,135.805037";
-        SpotListCrd[7] = "35.184016,137.048729";
-        var NearIndex = calculate(myCrd);
-        document.getElementById("city").selectedIndex = NearIndex + 1;
-        SpotListCrd.length = 0;
-    }
-
-    SPARQL(myCrd);
-
-    if ((navigator.userAgent.indexOf('iPhone') > 0 &&
-        navigator.userAgent.indexOf('iPad') == -1) ||
-        navigator.userAgent.indexOf('iPod') > 0) {
-        document.getElementById("modalButton").style.display = "inline";
-    } else {
-        document.getElementById("androidReload").style.display = "inline";
-        document.getElementById("res").style.display = "inline";
-        setTimeout('InitializeMap()', 100);
-    }
-}
-function ErrorPos(error) {
-    alert("GPS is not Working! ErrorCode:" + error.code);
-}
-
-
-//ínê}ï\é¶
-function InitializeMap() {
-    var directionService = new google.maps.DirectionsService();
-    var directionDisplay = new google.maps.DirectionsRenderer();
-    var now = new google.maps.LatLng();
-    var mapOptions = { mapTypeId: google.maps.MapTypeId.ROADMAP };
-    var map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-    directionDisplay.setMap(map);
-
-    var start = myCrd;
-    var end = toCrd;
-    var request = { origin: start, destination: end, travelMode: google.maps.TravelMode.DRIVING };
-    directionService.route(request, function (result, status) {
-        if (status == google.maps.DirectionsStatus.OK) {
-            directionDisplay.setDirections(result);
+        if (aDis>bDis) {
+            return 1;
         }
+        return 0;
     });
+    return json;
 }
 
-//URLÉXÉLÅ[É}ÇΩÇø
-function telephone() {
-    location.href = "tel:" + Tel;
-}
-function gmap() {
-    if (window.confirm("MapÉAÉvÉäÇ≈äJÇ´Ç‹Ç∑"))
-        location.href = "http://maps.apple.com/maps?&saddr=" + myCrd + "&daddr=" + toCrd;
-}
-
-//iOSïWèÄÉRÉìÉpÉXéÊìæ
-function iOS(e) {
-    //iOSïWèÄÉRÉìÉpÉXéÊìæ
-    heading = e.webkitCompassHeading - defAngle;
-    if (heading < 0) heading += 360;
-    heading += window.orientation;
-    Arrow.style.webkitTransform = 'rotate(-' + (heading) + 'deg)';
-
-    window.addEventListener("compassneedscalibration", function (event) {
-        alert('ÉRÉìÉpÉXÇ™ê≥ÇµÇ≠Ç†ÇËÇ‹ÇπÇÒÅB8ÇÃéöÇï`Ç≠ÇÊÇ§Ç…ÉfÉoÉCÉXÇìÆÇ©ÇµÇƒÇ≠ÇæÇ≥Ç¢ÅB');
-        event.preventDefault();
-    }, true);
-
-    if (document.getElementById("city").options[document.getElementById("city").selectedIndex].value != "JON")
-        document.getElementById("Arrow").style.display = "inline";
-}
-//AndroidÇÕí˙ÇﬂÇƒínê}ï\é¶
-function android() {
-    var map = document.createElement("div");
-    document.getElementById("res").appendChild(map);
-    map.setAttribute("id", "map_canvas");
-    map.style.width = "100%";
-    map.style.height = "60%";
-}
-//LoadéûÇ…í[ññÇ≈ï™äÚ
-window.addEventListener('load', function () {
-    if ((navigator.userAgent.indexOf('iPhone') > 0 &&
-        navigator.userAgent.indexOf('iPad') == -1) ||
-        navigator.userAgent.indexOf('iPod') > 0) {
-        window.addEventListener('deviceorientation', iOS, false);
+function Scheme() {
+    if (userAgent.indexOf('iPhone')>-1) {
+        var scheme='comgooglemaps-x-callback://?saddr='+NowPos.lat()+','+NowPos.lng()+'&daddr='+distination.lat()+','+distination.lng()+'&directionsmode=walking';
+        window.location.href=scheme;
     } else {
-        android();
+        var scheme='http://maps.google.com?saddr='+NowPos.lat()+','+NowPos.lng()+'&daddr='+distination.lat()+','+distination.lng()+'&directionsmode=walking';
+        window.location.href=scheme;
     }
-}, false);
+}

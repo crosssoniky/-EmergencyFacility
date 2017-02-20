@@ -1,0 +1,55 @@
+﻿<!--<!DOCTYPE html>-->
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>SPARQL避難所</title>
+    <!-- Bootstrap -->
+    <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="https://crssnky.xyz/bootstrap/js/bootstrap.min.js" charset="utf-8"></script>
+    <script async src="https://maps.google.com/maps/api/js?key=AIzaSyCPQhx2xblJ7sO0pY-UpwJaIKOx4Pk4IYE&libraries=geometry"></script>
+    <script src="https://crssnky.xyz/EmergencyFacility/js/scripts.js"></script>
+    <link href="https://crssnky.xyz/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container text-center">
+        <h1> 最寄りの避難所</h1>
+        <select class="form-control" onchange="DataResourceChange(this)" id="citySelection">
+            <optgroup label="北海道" id="Hokkaido"></optgroup>
+            <optgroup label="東北地方" id="Tohoku"></optgroup>
+            <optgroup label="関東地方" id="Kanto"></optgroup>
+            <optgroup label="中部地方" id="Chubu"></optgroup>
+            <optgroup label="近畿地方" id="Kinki"></optgroup>
+            <optgroup label="中国地方" id="Chugoku"></optgroup>
+            <optgroup label="四国地方" id="Shikoku"></optgroup>
+            <optgroup label="九州地方" id="Kyusyu"></optgroup>
+        </select>
+        <div id="canvas" class="container text-center"></div>
+    </div>
+    <div class="container text-center">
+        <div id="CC">
+            ABOUT:<br />
+            各都市が公開している避難所データを元に、避難を支援するモバイルWebアプリ<br />
+            <a class="btn btn-danger" onclick="Scheme()" id="test">GoogleMapで道案内</a>
+            <br />
+            <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="クリエイティブ・コモンズ・ライセンス" style="border-width:0" src="https://i.creativecommons.org/l/by-nc/4.0/88x31.png" /></a>
+            <br />APP:CC BY JON's Apps
+            <br />DATA:CC BY <a href="http://developer.odp.jig.jp/">odp</a>
+        </div>
+    </div>
+    <script>
+        //GoogleAnalytics
+        (function (i,s,o,g,r,a,m) {
+            i['GoogleAnalyticsObject']=r; i[r]=i[r]||function () {
+                (i[r].q=i[r].q||[]).push(arguments)
+            },i[r].l=1*new Date(); a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0]; a.async=1; a.src=g; m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+        ga('create','UA-51356556-7','auto');
+        ga('send','pageview');
+    </script>
+</body>
+</html>
